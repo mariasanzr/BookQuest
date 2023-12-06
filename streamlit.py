@@ -29,79 +29,62 @@ collection = db["books"]
 data = list(collection.find())
 df = pd.DataFrame(data)
 
+base_df = df.copy()
 
-# Title for the side bar
-st.sidebar.header('Filters')
-
-# Filter for the author
-unique_authors = df['author'].unique()
-unique_authors = ['Choose an option'] + list(unique_authors)
+# Filtro para el autor
+unique_authors = ['Choose an option'] + list(base_df['author'].unique())
 selected_author = st.sidebar.selectbox('Author', unique_authors)
 if selected_author != 'Choose an option':
-    filtered_df = df[df['author'] == selected_author]
-    st.write(filtered_df)
-    st.write(f"Author selected: {selected_author}")
-else:
-    st.write("No author selected")
+    base_df = base_df[base_df['author'] == selected_author]
 
-# Filter for the genre
-df['genre'] = df['genre'].apply(lambda x: ast.literal_eval(x))
+# Filtro para el género
+base_df['genre'] = base_df['genre'].apply(lambda x: ast.literal_eval(x))
 unique_genres = set()
-for value in df['genre']:
+for value in base_df['genre']:
     unique_genres.update(value.values())
 selected_genres = st.sidebar.multiselect('Genre', list(unique_genres))
-filtered_df = df[df['genre'].apply(lambda x: any(item in selected_genres for item in x.values()))]
 if selected_genres:
-    st.write(filtered_df)
-else:
-    st.write("No genres selected")
+    base_df = base_df[base_df['genre'].apply(lambda x: any(item in selected_genres for item in x.values()))]
 
-
-# Filter for the publication year
-years = sorted(df['publication_date'].dt.year.unique())
-years.insert(0, '')
+# Filtro para el año de publicación
+years = [''] + sorted(base_df['publication_date'].dt.year.unique())
 selected_year = st.sidebar.select_slider('Publication year', options=years)
 if selected_year != '':
-    filtered_df = df[df['publication_date'].dt.year == selected_year]
-    st.write(filtered_df)
-else:
-    st.write("No year selected")
+    base_df = base_df[base_df['publication_date'].dt.year == selected_year]
 
 # Filtro para la calificación
 min_rating, max_rating = st.sidebar.slider('Rating', 0.0, 5.0, (0.0, 5.0))
 if min_rating != 0.0 or max_rating != 5.0:
-    filtered_df = df[(df['rating'] >= min_rating) & (df['rating'] <= max_rating)]
-    if not filtered_df.empty:
-        st.write(filtered_df)
-    else:
-        st.write("No matching data")
-else:
-    st.write("No rating filter applied")
+    base_df = base_df[(base_df['rating'] >= min_rating) & (base_df['rating'] <= max_rating)]
 
 # Filtro para el número de ratings
-min_num_ratings = df['rating_count'].min()
-max_num_ratings = df['rating_count'].max()
+min_num_ratings = base_df['rating_count'].min()
+max_num_ratings = base_df['rating_count'].max()
 
-# Filtro para el número de ratings con valores por defecto que abarquen todo el rango
+# Verificar si los valores son iguales y ajustar uno de ellos si es necesario
+if min_num_ratings == max_num_ratings:
+    # Si los valores son iguales, ajusta uno de ellos
+    min_num_ratings -= 1  # Restar 1 al valor mínimo, por ejemplo
+
 selected_min, selected_max = st.sidebar.slider('Number of ratings', min_num_ratings, max_num_ratings, (min_num_ratings, max_num_ratings))
 if (selected_min, selected_max) != (min_num_ratings, max_num_ratings):
-    filtered_df = df[(df['rating_count'] >= selected_min) & (df['rating_count'] <= selected_max)]
-    if not filtered_df.empty:
-        st.write(filtered_df)
-    else:
-        st.write("No matching data")
-else:
-    st.write("No number of ratings filter applied")
+    base_df = base_df[(base_df['rating_count'] >= selected_min) & (base_df['rating_count'] <= selected_max)]
 
-# Filtro para el número de paginas
-min_num_pages = df['num_page'].min()
-max_num_pages = df['num_page'].max()
+# Filtro para el número de páginas
+min_num_pages = base_df['num_page'].min()
+max_num_pages = base_df['num_page'].max()
+
+# Verificar si los valores son iguales y ajustar uno de ellos si es necesario
+if min_num_pages == max_num_pages:
+    # Si los valores son iguales, ajusta uno de ellos
+    min_num_pages -= 1  # Restar 1 al valor mínimo, por ejemplo
+
 selected_min, selected_max = st.sidebar.slider('Number of pages', min_num_pages, max_num_pages, (min_num_pages, max_num_pages))
 if (selected_min, selected_max) != (min_num_pages, max_num_pages):
-    filtered_df = df[(df['num_page'] >= selected_min) & (df['num_page'] <= selected_max)]
-    if not filtered_df.empty:
-        st.write(filtered_df)
-    else:
-        st.write("No matching data")
+    base_df = base_df[(base_df['num_page'] >= selected_min) & (base_df['num_page'] <= selected_max)]
+
+# Mostrar los resultados filtrados
+if not base_df.empty:
+    st.write(base_df)
 else:
-    st.write("No number of pages filter applied")
+    st.write("No matching data")
