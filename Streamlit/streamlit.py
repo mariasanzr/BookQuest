@@ -4,13 +4,13 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 import pylab as plt
-import webbrowser
-import base64
-import io
-from config import mongo_db_url
+import sys
 import pymongo
 import ast
 from datetime import datetime
+
+sys.path.append('../')
+from config import *
 
 # Page configuration
 st.set_page_config(
@@ -43,6 +43,7 @@ df = pd.DataFrame(data)
 
 base_df = df.copy()
 
+# Sorting the ratings by emoji color-based order
 map_rating_to_emoji = lambda rating: (
             f"{rating} 🔴" if 0.00 <= rating <= 2.50 else 
             f"{rating} 🟠" if 2.51 <= rating <= 4.00 else 
@@ -50,14 +51,14 @@ map_rating_to_emoji = lambda rating: (
         )
 
 
-# Filtro para el autor
+# Creating the filter for 'author'
 unique_authors = ['Choose an option'] + list(base_df['author'].unique())
 selected_author = st.sidebar.selectbox('Author', unique_authors)
 if selected_author != 'Choose an option':
     base_df = base_df[base_df['author'] == selected_author]
     filters_applied = True
 
-# Filtro para el género
+# Creating the filter for 'genre'
 base_df['genre'] = base_df['genre'].apply(lambda x: ast.literal_eval(x))
 unique_genres = set()
 for value in base_df['genre']:
@@ -67,44 +68,36 @@ if selected_genres:
     base_df = base_df[base_df['genre'].apply(lambda x: any(item in selected_genres for item in x.values()))]
     filters_applied = True
 
-# Filtro para el año de publicación
+# Creating the filter for 'publication_date'
 years = [''] + sorted(base_df['publication_date'].dt.year.unique())
 selected_year = st.sidebar.select_slider('Publication year', options=years)
 if selected_year != '':
     base_df = base_df[base_df['publication_date'].dt.year == selected_year]
     filters_applied = True
 
-# Filtro para la calificación
+# Creating the filter for 'rating'
 min_rating, max_rating = st.sidebar.slider('Rating', 0.0, 5.0, (0.0, 5.0))
 if min_rating != 0.0 or max_rating != 5.0:
     base_df = base_df[(base_df['rating'] >= min_rating) & (base_df['rating'] <= max_rating)]
     filters_applied = True
 
 
-# Filtro para el número de ratings
+# Creating the filter for 'rating_count'
 min_num_ratings = base_df['rating_count'].min()
 max_num_ratings = base_df['rating_count'].max()
-
-
-# Verificar si los valores son iguales y ajustar uno de ellos si es necesario
 if min_num_ratings == max_num_ratings:
-    # Si los valores son iguales, ajusta uno de ellos
-    min_num_ratings -= 1  # Restar 1 al valor mínimo, por ejemplo
-    
+    min_num_ratings -= 1  
 
 selected_min, selected_max = st.sidebar.slider('Number of ratings', min_num_ratings, max_num_ratings, (min_num_ratings, max_num_ratings))
 if (selected_min, selected_max) != (min_num_ratings, max_num_ratings):
     base_df = base_df[(base_df['rating_count'] >= selected_min) & (base_df['rating_count'] <= selected_max)]
     filters_applied = True
 
-# Filtro para el número de páginas
+# Creating the filter for 'num_page'
 min_num_pages = base_df['num_page'].min()
 max_num_pages = base_df['num_page'].max()
-
-# Verificar si los valores son iguales y ajustar uno de ellos si es necesario
 if min_num_pages == max_num_pages:
-    # Si los valores son iguales, ajusta uno de ellos
-    min_num_pages -= 1  # Restar 1 al valor mínimo, por ejemplo
+    min_num_pages -= 1  
 
 selected_min, selected_max = st.sidebar.slider('Number of pages', min_num_pages, max_num_pages, (min_num_pages, max_num_pages))
 if (selected_min, selected_max) != (min_num_pages, max_num_pages):
@@ -112,15 +105,17 @@ if (selected_min, selected_max) != (min_num_pages, max_num_pages):
     filters_applied = True
 
 
-
+# Displaying the results
 if filters_applied and not base_df.empty:
 
+    # Counting the number of results
     st.markdown(f"**Total results:** {len(base_df)}/{len(df)}")
 
     st.markdown("---")
 
-    num_columns = 3  # Número de columnas para mostrar los resultados
-    elements_per_row = 3  # Número de elementos por fila
+    # Diviging the results in rows and columns
+    num_columns = 3  
+    elements_per_row = 3
 
     total_elements = len(base_df)
     num_full_rows, remainder = divmod(total_elements, elements_per_row)
