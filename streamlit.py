@@ -19,8 +19,19 @@ st.set_page_config(
     layout = 'wide',
     initial_sidebar_state = 'expanded',
 )
+
+filters_applied = False
+
 st.title("BookBuddy ")
 st.markdown("### Find your next favorite book 📖")
+st.sidebar.title('Filters')
+
+if not filters_applied:
+    st.write('''Welcome to BookBuddy, your ultimate book recommendation platform. With BookBuddy, you can explore a vast collection of books and find your perfect match by customizing filters based on your preferences. Choose your favorite author, select genres that interest you, narrow down by publication year, rating, number of reviews, or even the number of pages.
+            
+Happy reading with BookBuddy! ✨''')
+
+st.markdown("---")
 
 # Data loading
 client = pymongo.MongoClient(mongo_db_url)
@@ -38,7 +49,6 @@ map_rating_to_emoji = lambda rating: (
             f"{rating} 🟢" if 4.01 <= rating <= 5.00 else ""
         )
 
-filters_applied = False
 
 # Filtro para el autor
 unique_authors = ['Choose an option'] + list(base_df['author'].unique())
@@ -104,6 +114,11 @@ if (selected_min, selected_max) != (min_num_pages, max_num_pages):
 
 
 if filters_applied and not base_df.empty:
+
+    st.markdown(f"**Total results:** {len(base_df)}/{len(df)}")
+
+    st.markdown("---")
+
     num_columns = 3  # Número de columnas para mostrar los resultados
     elements_per_row = 3  # Número de elementos por fila
 
@@ -126,16 +141,17 @@ if filters_applied and not base_df.empty:
                     st.markdown(f'**Genre:** {", ".join(row["genre"].values())}')
                     rating_with_emoji = map_rating_to_emoji(row['rating'])
                     st.markdown(f"**Rating:** {rating_with_emoji}")
-                    st.markdown(f'**Number of ratings:** {row["rating_count"]}')
-                    st.markdown(f'**Number of reviews:** {row["review_count"]}')
+                    st.markdown(f'**N° of ratings:** {row["rating_count"]}')
+                    st.markdown(f'**N° of reviews:** {row["review_count"]}')
                     st.markdown(f'**Publication date:** {row["publication_date"].strftime("%d/%m/%Y")}')
-                    st.markdown(f'**Number of pages:** {row["num_page"]}')
+                    st.markdown(f'**N° of pages:** {row["num_page"]}')
 
                     cover_url = row['cover']
                     if cover_url:
                         st.image(cover_url, caption='Cover', width=100)
                     else:
                         st.write("No cover available")
+                    
 
                     st.markdown("---")
 
