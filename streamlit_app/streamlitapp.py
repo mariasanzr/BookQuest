@@ -1,5 +1,5 @@
 # Import of libraries
-from turtle import width
+import turtle
 import streamlit as st
 import pandas as pd
 from PIL import Image
