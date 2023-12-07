@@ -1,6 +1,6 @@
 # BookQuest 📖
 
-![cover](images/bookquest_cover.png)
+![cover](visual_support/bookquest_cover.png)
 
 1. [What it is ✍🏻](#whatitis)
 2. [ETL process 🔎](#etl)
