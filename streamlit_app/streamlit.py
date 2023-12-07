@@ -3,7 +3,6 @@ from turtle import width
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import pylab as plt
 import sys
 import pymongo
 import ast
